@@ -1,3 +1,4 @@
+version: '3.8'
 services:
   ctfd:
     build: .
@@ -22,8 +23,8 @@ services:
     depends_on:
       - db
     networks:
-        default:
-        internal:
+      default:
+      internal:
 
   nginx:
     image: nginx:stable
@@ -47,19 +48,48 @@ services:
     volumes:
       - .data/mysql:/var/lib/mysql
     networks:
-        internal:
-    # This command is required to set important mariadb defaults
+      internal:
     command: [mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci, --wait_timeout=28800, --log-warnings=0]
 
   cache:
     image: redis:4
     restart: always
     volumes:
-    - .data/redis:/data
+      - .data/redis:/data
     networks:
-        internal:
+      internal:
+
+  mysql_server:
+    image: mysql:8
+    container_name: mysql_server
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: mydatabase
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: mypassword
+    ports:
+      - "3307:3306"
+    volumes:
+      - .data/mysql-server:/var/lib/mysql
+    networks:
+      - internal
+
+  app:
+    image: mysql_server
+    environment:
+      DB_HOST: mysql_server
+      DB_PORT: 3306
+      DB_NAME: mydatabase
+      DB_USER: myuser
+      DB_PASSWORD: mypassword
+    depends_on:
+      - mysql_server
+    networks:
+      - default
+      - internal
 
 networks:
-    default:
-    internal:
-        internal: true
+  default:
+  internal:
+    internal: true
